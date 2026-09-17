@@ -101,6 +101,54 @@
           "source_url": "https://registry.sdmx.org/"
         }
       ]
+    },
+    {
+      "agency_id": "IMF",
+      "artefact_id": "BOP",
+      "version": "2.6.0",
+      "name": "Balance of Payments and International Investment Position",
+      "description": "Authoritative global Data Structure Definition for Balance of Payments and International Investment Position statistics",
+      "domain": "external_sector",
+      "issuer": "International Monetary Fund",
+      "artefact_type": "structural_reference",
+      "provenance": "Retrieved from the SDMX Global Registry",
+      "source_url": "https://registry.sdmx.org/sdmx/v2/structure/datastructure/IMF/BOP/2.6.0?references=all",
+      "retrieved_at": "2026-09-17",
+      "fixture_classification": "authoritative_reference",
+      "source_id": "SDMX_GLOBAL_REGISTRY",
+      "retrieval_mode": "cache",
+      "trust_level": "authoritative",
+      "local_file": "reference-imf-bop-2.6.0.xml",
+      "related_sources": [
+        {
+          "id": "BPM7",
+          "name": "Integrated Balance of Payments and International Investment Position Manual, Seventh Edition",
+          "issuer": "International Monetary Fund",
+          "version": "BPM7 (2025)",
+          "artefact_type": "methodological_standard",
+          "description": "Official IMF methodological manual for balance of payments and international investment position statistics",
+          "source_url": "https://data.imf.org/-/media/iData/External-Storage/Documents/5B776E0E552E4881AF24042EAE7D049B/en/1-BPM7-White-Cover.pdf"
+        },
+        {
+          "id": "BPM6",
+          "name": "Balance of Payments and International Investment Position Manual, Sixth Edition",
+          "issuer": "International Monetary Fund",
+          "version": "BPM6",
+          "artefact_type": "methodological_standard",
+          "description": "Predecessor international methodology for balance of payments and international investment position statistics",
+          "source_url": "https://www.imf.org/en/publications/manuals-guides/issues/2016/12/31/balance-of-payments-manual-sixth-edition-22588",
+          "published_at": "2010-01-11"
+        },
+        {
+          "id": "SDMX_GLOBAL_REGISTRY",
+          "name": "SDMX Global Registry",
+          "issuer": "SDMX Sponsors",
+          "version": "Live registry",
+          "artefact_type": "shared_sdmx_artefact_source",
+          "description": "Authoritative registry source for shared SDMX structures and codelists",
+          "source_url": "https://registry.sdmx.org/"
+        }
+      ]
     }
   ]
 }

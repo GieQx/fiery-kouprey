@@ -156,7 +156,12 @@ def _candidate_sort_key(candidate: DiscoveryCandidate) -> tuple[int, int, int, i
 
 
 def discover_candidates(local: DSDStructure, library: list[LibraryEntry]) -> DiscoveryResult:
-    candidates = [candidate for entry in library if (candidate := _candidate(local, entry)) is not None]
+    candidates = [
+        candidate
+        for entry in library
+        if entry.metadata.fixture_classification != "workshop_reference"
+        and (candidate := _candidate(local, entry)) is not None
+    ]
     candidates.sort(key=_candidate_sort_key, reverse=True)
     return DiscoveryResult(
         candidates=candidates[:5],

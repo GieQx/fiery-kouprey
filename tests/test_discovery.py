@@ -48,17 +48,22 @@ def test_discovery_can_return_no_suitable_reference():
     assert result.message == "No suitable reference standard identified."
 
 
-def test_bop_demo_ranks_workshop_bop_reference_first_with_citations():
+def test_bop_demo_ranks_global_registry_bop_reference_first_with_citations():
     local = parse_structure("local-bop-demo.xml", Path("samples/local-bop-demo.xml").read_bytes())
 
     result = discover_candidates(local, _library())
 
     best = result.candidates[0]
-    assert best.reference.artefact_id == "DSD_BOP"
-    assert best.reference.fixture_classification == "workshop_reference"
+    assert best.reference.identity == "IMF:BOP(2.6.0)"
+    assert best.reference.source_id == "SDMX_GLOBAL_REGISTRY"
+    assert best.reference.fixture_classification == "authoritative_reference"
     assert best.discovery_tier == "strong"
     assert any(item.signal == "domain_metadata_overlap" and item.count for item in best.evidence)
     assert {source.id for source in best.reference.related_sources} >= {"BPM7", "BPM6"}
+    assert all(
+        candidate.reference.fixture_classification != "workshop_reference"
+        for candidate in result.candidates
+    )
 
 
 def test_discovery_uses_source_trust_only_after_relevance_and_evidence():

@@ -28,6 +28,7 @@ from sdmx_alignment.reference_library import (
 )
 from sdmx_alignment.recommendations import recommend_standards
 from sdmx_alignment.reference_sources import load_methodology_catalog
+from sdmx_alignment.reference_sources import GlobalRegistrySource, merge_refresh
 from sdmx_alignment.reporting import build_before_after_report
 from sdmx_alignment.review import apply_review, default_action
 from sdmx_alignment.semantic_matcher.base import ProviderError
@@ -213,7 +214,14 @@ def render_discovery_candidates(library: list[LibraryEntry], matcher):
     st.markdown(f"**{result.message}**")
     st.caption("Candidate ordering indicates discovery relevance, not authority or statistical equivalence.")
 
-    entry_by_identity = {entry.metadata.identity: entry for entry in library}
+    candidate_identities = {
+        candidate.reference.identity for candidate in result.candidates
+    }
+    entry_by_identity = {
+        entry.metadata.identity: entry
+        for entry in library
+        if entry.metadata.identity in candidate_identities
+    }
     for candidate in result.candidates:
         with st.container(border=True):
             heading, action = st.columns([4, 1])
@@ -255,9 +263,11 @@ def render_discovery_candidates(library: list[LibraryEntry], matcher):
     with st.expander("Browse all library entries"):
         identity = st.selectbox(
             "Reference standard",
-            [entry.metadata.identity for entry in library],
+            list(entry_by_identity),
             format_func=lambda value: next(
-                f"{entry.metadata.name} - {value}" for entry in library if entry.metadata.identity == value
+                f"{entry.metadata.name} - {value}"
+                for entry in entry_by_identity.values()
+                if entry.metadata.identity == value
             ),
         )
         if st.button("Use selected library entry", key="select_library_reference"):
@@ -273,8 +283,82 @@ def render_discovery_candidates(library: list[LibraryEntry], matcher):
         )
 
 
+def _preserve_reference_context(
+    library: list[LibraryEntry],
+    refresh,
+):
+    if refresh.status != "success":
+        return refresh
+    existing_by_identity = {entry.metadata.identity: entry for entry in library}
+    entries = []
+    for entry in refresh.entries:
+        existing = existing_by_identity.get(entry.metadata.identity)
+        if existing:
+            entry.metadata = entry.metadata.model_copy(
+                update={
+                    "domain": existing.metadata.domain,
+                    "related_sources": existing.metadata.related_sources,
+                }
+            )
+        entries.append(entry)
+    return refresh.model_copy(update={"entries": entries})
+
+
+def render_registry_source(library: list[LibraryEntry]):
+    registry_entries = [
+        entry
+        for entry in library
+        if entry.metadata.source_id == "SDMX_GLOBAL_REGISTRY"
+    ]
+    live = sum(entry.metadata.retrieval_mode == "live" for entry in registry_entries)
+    cached = sum(entry.metadata.retrieval_mode == "cache" for entry in registry_entries)
+    st.markdown("**SDMX Global Registry - primary source**")
+    st.caption(
+        f"Source ID: SDMX_GLOBAL_REGISTRY | Live: {live} | Cached: {cached} | "
+        "Exact bounded retrieval only"
+    )
+    feedback = st.session_state.get("registry_refresh_feedback")
+    if feedback:
+        (st.success if feedback[0] == "success" else st.warning)(feedback[1])
+        st.session_state.registry_refresh_feedback = None
+
+    with st.expander("Refresh an exact DataStructure from the Global Registry"):
+        agency_id = st.text_input("Registry agency ID", value="IMF")
+        artefact_id = st.text_input("Registry DSD ID", value="BOP")
+        version = st.text_input("Registry version", value="2.6.0")
+        if st.button("Refresh registry reference", type="secondary"):
+            try:
+                refresh = GlobalRegistrySource().fetch_datastructure(
+                    agency_id,
+                    artefact_id,
+                    version,
+                )
+                refresh = _preserve_reference_context(library, refresh)
+                if refresh.status == "success":
+                    updated = merge_refresh(library, refresh)
+                    st.session_state.reference_library = updated
+                    if st.session_state.local_structure is not None:
+                        st.session_state.discovery_result = discover_candidates(
+                            st.session_state.local_structure,
+                            updated,
+                        )
+                    st.session_state.registry_refresh_feedback = (
+                        "success",
+                        refresh.message,
+                    )
+                else:
+                    st.session_state.registry_refresh_feedback = (
+                        "fallback",
+                        refresh.message,
+                    )
+                st.rerun()
+            except ValueError as exc:
+                st.warning(str(exc))
+
+
 def render_source_selection(library: list[LibraryEntry], matcher):
     st.subheader("1. Discover - Upload Local DSD")
+    render_registry_source(library)
     local_file = st.file_uploader("Local DSD", type=["xml"], key="local_upload")
     local_xml = local_file.getvalue() if local_file else None
     upload_fingerprint = (
@@ -865,7 +949,12 @@ def render_results(settings, matcher, selected_reference, methodologies):
 initialize_state()
 settings, matcher = provider_settings()
 try:
-    reference_library = load_reference_library(BASE_DIR / "reference_library" / "manifest.json")
+    loaded_reference_library = load_reference_library(
+        BASE_DIR / "reference_library" / "manifest.json"
+    )
+    if "reference_library" not in st.session_state:
+        st.session_state.reference_library = loaded_reference_library
+    reference_library = st.session_state.reference_library
 except Exception as exc:
     reference_library = []
     st.error(f"Reference Standards Library could not be loaded: {exc}")

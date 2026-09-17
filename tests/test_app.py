@@ -93,10 +93,10 @@ def test_bop_demo_shows_separate_sources_and_generation_workflow():
     upload_and_discover(app, "local-bop-demo.xml")
 
     assert not app.exception
-    assert any("Balance of Payments workshop structural reference" in item.value for item in app.markdown)
+    assert any("Balance of Payments and International Investment Position" in item.value for item in app.markdown)
     assert any("BPM7" in item.value for item in app.markdown)
 
-    app.button(key="select_reference_DSD_BOP").click().run()
+    app.button(key="select_reference_BOP").click().run()
 
     assert not app.exception
     assert any("Reason why" in item.value for item in app.markdown)
@@ -118,6 +118,30 @@ def test_bop_demo_shows_separate_sources_and_generation_workflow():
         "Download audit JSON",
         "Download change log CSV",
     }
+
+
+def test_bop_discovery_uses_global_registry_reference_for_comparison():
+    app = AppTest.from_file(Path(__file__).parents[1] / "app.py", default_timeout=30).run()
+
+    assert any(
+        "SDMX Global Registry - primary source" in item.value
+        for item in app.markdown
+    )
+    assert any(item.label == "Registry agency ID" for item in app.text_input)
+    assert any(item.label == "Registry DSD ID" for item in app.text_input)
+    assert any(item.label == "Registry version" for item in app.text_input)
+
+    upload_and_discover(app, "local-bop-demo.xml")
+
+    registry_button = app.button(key="select_reference_BOP")
+    assert registry_button
+    registry_button.click().run()
+
+    assert not app.exception
+    assert app.session_state.selected_reference_identity == "IMF:BOP(2.6.0)"
+    assert app.session_state.reference_structure.agency_id == "IMF"
+    assert app.session_state.reference_structure.id == "BOP"
+    assert any("SDMX_GLOBAL_REGISTRY" in item.value for item in app.caption)
 
 
 def test_app_resolves_uploaded_dataflow_to_its_library_dsd():
@@ -193,7 +217,7 @@ def test_app_discovers_and_selects_installed_ollama_models(monkeypatch):
 def test_ai_recommendation_command_is_disabled_without_ready_provider():
     app = AppTest.from_file(Path(__file__).parents[1] / "app.py", default_timeout=30).run()
     upload_and_discover(app, "local-bop-demo.xml")
-    app.button(key="select_reference_DSD_BOP").click().run()
+    app.button(key="select_reference_BOP").click().run()
 
     command = next(button for button in app.button if button.label == "Run AI recommendations")
 
@@ -238,7 +262,7 @@ def test_ai_recommendations_run_explicitly_and_render_grounded_evidence(monkeypa
     )
     app = AppTest.from_file(Path(__file__).parents[1] / "app.py", default_timeout=30).run()
     upload_and_discover(app, "local-bop-demo.xml")
-    app.button(key="select_reference_DSD_BOP").click().run()
+    app.button(key="select_reference_BOP").click().run()
 
     assert ReadyMatcher.recommendations == 0
     methodology = next(item for item in app.selectbox if item.label == "Methodology")

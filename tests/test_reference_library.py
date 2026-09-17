@@ -38,7 +38,7 @@ def test_library_loads_manifest_and_exact_dsd_version():
         for source in load_source_catalog(Path("reference_library/sources.json"))
     }
 
-    assert len(library) == 4
+    assert len(library) == 5
     assert all(
         {"source_id", "retrieval_mode", "trust_level"} <= standard.keys()
         for standard in manifest["standards"]
@@ -150,6 +150,25 @@ def test_bop_reference_separates_structure_from_methodology_sources():
         "https://data.imf.org/-/media/iData/External-Storage/Documents/"
         "5B776E0E552E4881AF24042EAE7D049B/en/1-BPM7-White-Cover.pdf"
     )
+
+
+def test_bop_registry_reference_is_authoritative_cached_global_structure():
+    library = load_reference_library(Path("reference_library/manifest.json"))
+
+    bop = next(
+        item
+        for item in library
+        if item.metadata.source_id == "SDMX_GLOBAL_REGISTRY"
+        and item.metadata.artefact_id == "BOP"
+    )
+
+    assert bop.metadata.identity == "IMF:BOP(2.6.0)"
+    assert bop.metadata.retrieval_mode == "cache"
+    assert bop.metadata.trust_level == "authoritative"
+    assert bop.metadata.fixture_classification == "authoritative_reference"
+    assert bop.structure.agency_id == "IMF"
+    assert bop.structure.id == "BOP"
+    assert bop.structure.version == "2.6.0"
 
 
 def test_library_rejects_manifest_identity_mismatch(tmp_path: Path):
