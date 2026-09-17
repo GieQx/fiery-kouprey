@@ -54,6 +54,20 @@ def test_pending_ai_suggestion_cannot_enter_approved_plan():
     assert area.id not in {item.finding_id for item in plan.decisions}
 
 
+def test_accepted_ai_advisory_reuses_existing_review_path():
+    result = _comparison()
+    area = next(item for item in result.findings if item.local and item.local.id == "AREA")
+    area.is_ai_assisted = True
+
+    apply_review(result, area.id, "accepted", "REUSE", "Expert verified the advisory evidence.")
+    plan = build_alignment_plan(result)
+    decision = next(item for item in plan.decisions if item.finding_id == area.id)
+
+    assert decision.recommended_action == "REUSE"
+    assert decision.reviewer_status == "accepted"
+    assert decision.reviewer_note == "Expert verified the advisory evidence."
+
+
 def test_evaluation_calculates_measured_delta_only_for_complete_scores():
     baseline = {name: 0 for name in ("reuse", "code_mapping", "gaps", "limitations", "evidence")}
     improved = {name: 2 for name in baseline}

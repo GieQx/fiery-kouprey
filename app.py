@@ -16,6 +16,9 @@ from sdmx_alignment.export import (
     export_change_log_csv,
     export_evidence_package,
 )
+from sdmx_alignment.models.recommendations import StandardsRecommendationRequest
+from sdmx_alignment.models.reference import MethodologyStandard, ReferenceStandard
+from sdmx_alignment.models.semantic import SemanticElement
 from sdmx_alignment.models.structures import DSDStructure
 from sdmx_alignment.parser.sdmx_structure import StructureParseError, parse_structure
 from sdmx_alignment.reference_library import (
@@ -23,12 +26,14 @@ from sdmx_alignment.reference_library import (
     load_reference_library,
     resolve_uploaded_structure,
 )
+from sdmx_alignment.recommendations import recommend_standards
+from sdmx_alignment.reference_sources import load_methodology_catalog
 from sdmx_alignment.reporting import build_before_after_report
 from sdmx_alignment.review import apply_review, default_action
 from sdmx_alignment.semantic_matcher.base import ProviderError
 from sdmx_alignment.semantic_matcher.factory import create_matcher
 from sdmx_alignment.semantic_matcher.ollama_provider import OllamaProvider
-from sdmx_alignment.semantic_matcher.service import enrich_unresolved, generate_assessment
+from sdmx_alignment.semantic_matcher.service import generate_assessment
 from sdmx_alignment.transformation import transform_dsd
 from sdmx_alignment.validation import assess_reference_alignment, validate_revised_dsd
 
@@ -60,6 +65,8 @@ ANALYSIS_STATE_DEFAULTS = {
     "reference_alignment": None,
     "revised_comparison": None,
     "before_after": None,
+    "recommendations": {},
+    "selected_methodology_id": "",
 }
 
 
@@ -87,12 +94,12 @@ def initialize_state():
     defaults = {**ANALYSIS_STATE_DEFAULTS, "upload_fingerprint": None}
     for key, value in defaults.items():
         if key not in st.session_state:
-            st.session_state[key] = value
+            st.session_state[key] = value.copy() if isinstance(value, dict) else value
 
 
 def clear_analysis_state():
     for key, value in ANALYSIS_STATE_DEFAULTS.items():
-        st.session_state[key] = value
+        st.session_state[key] = value.copy() if isinstance(value, dict) else value
 
 
 @st.cache_data(ttl=15, show_spinner=False)
@@ -163,7 +170,6 @@ def provider_settings():
 
 def run_comparison(local: DSDStructure, reference: DSDStructure, matcher):
     result = compare_structures(local, reference)
-    result = enrich_unresolved(result, matcher)
     st.session_state.local_structure = local
     st.session_state.reference_structure = reference
     st.session_state.comparison = result
@@ -177,6 +183,8 @@ def run_comparison(local: DSDStructure, reference: DSDStructure, matcher):
     st.session_state.reference_alignment = None
     st.session_state.revised_comparison = None
     st.session_state.before_after = None
+    st.session_state.recommendations = {}
+    st.session_state.selected_methodology_id = ""
 
 
 def load_local_structure(file_name: str, xml_bytes: bytes, library: list[LibraryEntry]):
@@ -337,13 +345,13 @@ def render_finding_detail(finding):
         else:
             st.caption("No reference counterpart")
     if finding.is_ai_assisted:
-        st.markdown("<div class='ai-banner'><b>AI-assisted suggestion - human review required.</b></div>", unsafe_allow_html=True)
+        st.warning("AI-assisted suggestion - human review required.")
         st.caption(f"Provider: {finding.llm_provider} | Model: {finding.llm_model} | Confidence: {finding.confidence:.2f}")
-    st.markdown(
-        f"<div class='evidence'><b>Reason why</b><br>{finding.explanation}<br>"
-        f"<small>Classification: {finding.finding_classification.replace('_', ' ').title()} | "
-        f"Method: {finding.match_method.replace('_', ' ')}</small></div>",
-        unsafe_allow_html=True,
+    st.markdown("**Reason why**")
+    st.write(finding.explanation)
+    st.caption(
+        f"Classification: {finding.finding_classification.replace('_', ' ').title()} | "
+        f"Method: {finding.match_method.replace('_', ' ')}"
     )
     if finding.code_mappings:
         st.dataframe(pd.DataFrame([item.model_dump() for item in finding.code_mappings]), width="stretch")
@@ -506,7 +514,7 @@ def render_answer_test(settings, matcher):
         st.caption("Measured result: Not measured")
 
 
-def render_generate_and_prove(result, selected_reference):
+def render_generate_and_prove(result, selected_reference, selected_methodology):
     plan = st.session_state.alignment_plan
     if not plan or plan.status != "final":
         st.info("Finalize the approved change set before generating a revised DSD.")
@@ -586,6 +594,8 @@ def render_generate_and_prove(result, selected_reference):
         alignment,
         report,
         selected_reference,
+        selected_methodology=selected_methodology,
+        recommendations=st.session_state.recommendations,
     )
     downloads[1].download_button(
         "Download audit JSON",
@@ -601,7 +611,207 @@ def render_generate_and_prove(result, selected_reference):
     )
 
 
-def render_results(settings, matcher, selected_reference):
+def _eligible_methodologies(
+    selected_reference: ReferenceStandard,
+    methodologies: list[MethodologyStandard],
+) -> list[MethodologyStandard]:
+    related_ids = {source.id for source in selected_reference.related_sources}
+    return [
+        methodology
+        for methodology in methodologies
+        if selected_reference.domain in methodology.domains
+        and methodology.id in related_ids
+    ]
+
+
+def _selected_methodology(
+    methodologies: list[MethodologyStandard],
+) -> MethodologyStandard | None:
+    return next(
+        (
+            item
+            for item in methodologies
+            if item.id == st.session_state.selected_methodology_id
+        ),
+        None,
+    )
+
+
+def _recommendation_request(
+    finding,
+    methodology: MethodologyStandard | None,
+    selected_reference: ReferenceStandard,
+) -> StandardsRecommendationRequest:
+    local = (
+        SemanticElement(
+            id=finding.local.id,
+            name=finding.local.label,
+            description=finding.local.description,
+        )
+        if finding.local
+        else None
+    )
+    reference = (
+        SemanticElement(
+            id=finding.reference.id,
+            name=finding.reference.label,
+            description=finding.reference.description,
+        )
+        if finding.reference
+        else None
+    )
+    allowed_codes = sorted(
+        {
+            code
+            for mapping in finding.code_mappings
+            for code in (mapping.local_code, mapping.reference_code)
+        }
+    )
+    return StandardsRecommendationRequest(
+        finding_id=finding.id,
+        local=local,
+        reference=reference,
+        allowed_local_ids=[local.id] if local else [],
+        allowed_reference_ids=[reference.id] if reference else [],
+        allowed_codes=allowed_codes,
+        principles=methodology.principles if methodology else [],
+        citations=selected_reference.related_sources,
+    )
+
+
+def _deterministic_recommendation(finding) -> str:
+    action = default_action(finding)
+    labels = {
+        "REUSE": "Reuse the selected reference element after expert confirmation.",
+        "MAP": "Create a reviewed mapping to the selected reference codes.",
+        "KEEP_LOCAL_EXTENSION": "Retain this as a documented local extension.",
+        "ADD_MISSING_ELEMENT": "Add the missing reference element through the reviewed change plan.",
+    }
+    return labels[action]
+
+
+def _render_recommendation(
+    finding,
+    recommendation,
+    methodology: MethodologyStandard | None,
+    selected_reference: ReferenceStandard,
+):
+    with st.container(border=True):
+        local_id = finding.local.id if finding.local else "No local element"
+        reference_id = finding.reference.id if finding.reference else "No reference element"
+        st.markdown(f"**{local_id} -> {reference_id}**")
+        if recommendation:
+            st.warning("AI-assisted recommendation | Human review required")
+            st.caption(
+                f"Origin: AI | Provider: {recommendation.provider} | "
+                f"Model: {recommendation.model} | Confidence: {recommendation.confidence:.2f} | "
+                f"Grounding: {recommendation.grounding_status}"
+            )
+            st.markdown("**Recommendation**")
+            st.write(recommendation.recommendation)
+            st.markdown("**Reason**")
+            st.write(recommendation.reason)
+            st.markdown("**Evidence**")
+            for evidence in recommendation.evidence:
+                st.write(f"- {evidence}")
+            if recommendation.principle_id:
+                principle = next(
+                    (
+                        item
+                        for item in (methodology.principles if methodology else [])
+                        if item.id == recommendation.principle_id
+                    ),
+                    None,
+                )
+                if principle:
+                    st.markdown(f"**Methodology principle:** `{principle.id}`")
+                    st.write(principle.text)
+                    st.markdown(f"[Methodology source]({principle.source_url})")
+            trusted_citations = {
+                citation.id: citation for citation in selected_reference.related_sources
+            }
+            for citation_id in recommendation.citation_ids:
+                citation = trusted_citations.get(citation_id)
+                if citation:
+                    st.markdown(
+                        f"**Citation:** [{citation.id} - {citation.name}]({citation.source_url})"
+                    )
+        else:
+            st.caption("Origin: Deterministic structural comparison | Grounding: grounded")
+            st.markdown("**Recommendation**")
+            st.write(_deterministic_recommendation(finding))
+            st.markdown("**Reason**")
+            st.write(finding.explanation)
+            st.markdown("**Evidence**")
+            for evidence in finding.deterministic_evidence or [finding.explanation]:
+                st.write(f"- {evidence}")
+            st.caption(
+                f"Structural reference: {selected_reference.identity} | "
+                f"Provenance: {selected_reference.provenance}"
+            )
+
+
+def render_recommendations(
+    result,
+    matcher,
+    selected_reference: ReferenceStandard,
+    methodologies: list[MethodologyStandard],
+):
+    eligible = _eligible_methodologies(selected_reference, methodologies)
+    methodology_ids = [""] + [item.id for item in eligible]
+    selected_id = st.selectbox(
+        "Methodology",
+        methodology_ids,
+        format_func=lambda value: "No methodology selected" if not value else value,
+        key="methodology_choice",
+    )
+    if selected_id != st.session_state.selected_methodology_id:
+        st.session_state.selected_methodology_id = selected_id
+        st.session_state.recommendations = {}
+        for finding in result.findings:
+            finding.is_ai_assisted = False
+            finding.llm_provider = None
+            finding.llm_model = None
+
+    methodology = _selected_methodology(eligible)
+    if methodology:
+        st.caption(
+            f"Selected methodology: {methodology.name} | {methodology.version}. "
+            "Selection provides context and does not assert compliance."
+        )
+    readiness = matcher.is_ready()
+    if not readiness.ready:
+        st.info(f"AI recommendations unavailable: {readiness.message}")
+    if st.button("Run AI recommendations", disabled=not readiness.ready, type="primary"):
+        recommendations = {}
+        for finding in result.findings:
+            if not finding.local or not finding.reference:
+                continue
+            request = _recommendation_request(finding, methodology, selected_reference)
+            recommendation = recommend_standards(request, matcher)
+            recommendations[finding.id] = recommendation
+            if recommendation.grounding_status == "grounded":
+                finding.is_ai_assisted = True
+                finding.llm_provider = recommendation.provider
+                finding.llm_model = recommendation.model
+                finding.confidence = recommendation.confidence
+        st.session_state.recommendations = recommendations
+        grounded = sum(
+            item.grounding_status == "grounded" for item in recommendations.values()
+        )
+        result.ai_status = "enabled" if grounded == len(recommendations) else "partial_failure"
+        st.rerun()
+
+    for finding in result.findings:
+        _render_recommendation(
+            finding,
+            st.session_state.recommendations.get(finding.id),
+            methodology,
+            selected_reference,
+        )
+
+
+def render_results(settings, matcher, selected_reference, methodologies):
     result = st.session_state.comparison
     st.divider()
     st.subheader("2. Decide - Assess and Review")
@@ -616,7 +826,7 @@ def render_results(settings, matcher, selected_reference):
         [result.summary.exact, result.summary.semantic_suggestions, result.summary.mapping_required, result.summary.missing, result.summary.unresolved],
     ):
         col.metric(label, value)
-    tabs = st.tabs(["Alignment assessment", "Human review", "Approved changes", "Generate and prove", "Audit"])
+    tabs = st.tabs(["Alignment assessment", "Recommendations", "Human review", "Approved changes", "Generate and prove", "Audit"])
     with tabs[0]:
         filters = st.multiselect(
             "Show statuses",
@@ -628,12 +838,18 @@ def render_results(settings, matcher, selected_reference):
         selected = st.selectbox("Inspect finding", [item.id for item in result.findings], key="inspect_finding")
         render_finding_detail(next(item for item in result.findings if item.id == selected))
     with tabs[1]:
-        render_review_tab(result)
+        render_recommendations(result, matcher, selected_reference, methodologies)
     with tabs[2]:
-        render_plan_tab(result)
+        render_review_tab(result)
     with tabs[3]:
-        render_generate_and_prove(result, selected_reference)
+        render_plan_tab(result)
     with tabs[4]:
+        render_generate_and_prove(
+            result,
+            selected_reference,
+            _selected_methodology(methodologies),
+        )
+    with tabs[5]:
         plan = st.session_state.alignment_plan or build_alignment_plan(result)
         payload = export_evidence_package(result, plan, st.session_state.evaluation)
         st.download_button(
@@ -653,6 +869,13 @@ try:
 except Exception as exc:
     reference_library = []
     st.error(f"Reference Standards Library could not be loaded: {exc}")
+try:
+    methodology_catalog = load_methodology_catalog(
+        BASE_DIR / "reference_library" / "methodologies.json"
+    )
+except Exception as exc:
+    methodology_catalog = []
+    st.error(f"Methodology catalog could not be loaded: {exc}")
 
 st.title("AI-Assisted SDMX Standards Alignment Workbench")
 st.markdown(
@@ -667,4 +890,4 @@ if st.session_state.comparison:
         for entry in reference_library
         if entry.metadata.identity == st.session_state.selected_reference_identity
     )
-    render_results(settings, matcher, selected_reference)
+    render_results(settings, matcher, selected_reference, methodology_catalog)

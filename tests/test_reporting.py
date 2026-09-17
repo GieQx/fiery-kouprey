@@ -4,8 +4,10 @@ from pathlib import Path
 from sdmx_alignment.alignment_plan import build_alignment_plan, finalize_alignment_plan
 from sdmx_alignment.comparator.engine import compare_structures
 from sdmx_alignment.export import export_audit_package, export_change_log_csv
+from sdmx_alignment.models.recommendations import StandardsRecommendationResult
 from sdmx_alignment.parser.sdmx_structure import parse_structure
 from sdmx_alignment.reference_library import load_reference_library
+from sdmx_alignment.reference_sources import load_methodology_catalog
 from sdmx_alignment.reporting import build_before_after_report
 from sdmx_alignment.review import apply_review
 from sdmx_alignment.transformation import transform_dsd
@@ -56,3 +58,51 @@ def test_audit_json_and_csv_include_sources_decisions_and_results():
     assert payload["technical_validation"]["status"] == "PASS"
     assert "reviewer_status" in csv_payload
     assert "OPENAI_API_KEY" not in json.dumps(payload)
+
+
+def test_audit_json_includes_methodology_grounding_and_recommendation_provenance():
+    before, after, plan, transformation, technical, alignment, report = _workflow()
+    reference = load_reference_library(Path("reference_library/manifest.json"))[-1].metadata
+    methodology = load_methodology_catalog(Path("reference_library/methodologies.json"))[0]
+    finding = next(item for item in before.findings if item.local and item.reference)
+    recommendation = StandardsRecommendationResult(
+        local_element_id=finding.local.id,
+        reference_element_id=finding.reference.id,
+        code_ids=[],
+        recommendation="Reuse the selected reference concept after expert review.",
+        reason="The supplied evidence supports the candidate alignment.",
+        evidence=["Local and reference identifiers are present."],
+        citation_ids=["BPM7"],
+        principle_id="BPM7_CONTEXT",
+        confidence=0.84,
+        provider="fake",
+        model="grounded-test-model",
+        grounding_status="grounded",
+    )
+
+    payload = json.loads(export_audit_package(
+        before,
+        after,
+        plan,
+        transformation,
+        technical,
+        alignment,
+        report,
+        reference,
+        selected_methodology=methodology,
+        recommendations={finding.id: recommendation},
+    ))
+
+    assert payload["selected_source_status"]["source_id"] == reference.source_id
+    assert payload["structural_reference_provenance"]["provenance"] == reference.provenance
+    assert payload["selected_methodology"]["id"] == "BPM7"
+    assert payload["recommendation_summary"]["deterministic"] >= 1
+    assert payload["recommendation_summary"]["ai"] == 1
+    exported = next(item for item in payload["original_comparison"]["findings"] if item["id"] == finding.id)
+    assert exported["grounding_status"] == "grounded"
+    assert exported["provider"] == "fake"
+    assert exported["model"] == "grounded-test-model"
+    assert exported["citation_ids"] == ["BPM7"]
+    assert "reviewer_decision" in exported
+    assert "OPENAI_API_KEY" not in json.dumps(payload)
+    assert "messages" not in payload

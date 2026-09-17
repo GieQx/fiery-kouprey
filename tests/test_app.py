@@ -2,6 +2,8 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+from sdmx_alignment.models.recommendations import StandardsRecommendationResult
+from sdmx_alignment.models.semantic import ProviderReadiness
 from sdmx_alignment.semantic_matcher.ollama_provider import OllamaProvider
 
 
@@ -186,3 +188,76 @@ def test_app_discovers_and_selects_installed_ollama_models(monkeypatch):
     assert model.options == ["qwen2.5:0.5b-instruct-q4_0", "llama3.2:3b"]
     assert model.value == "qwen2.5:0.5b-instruct-q4_0"
     assert any(button.label == "Refresh models" for button in app.button)
+
+
+def test_ai_recommendation_command_is_disabled_without_ready_provider():
+    app = AppTest.from_file(Path(__file__).parents[1] / "app.py", default_timeout=30).run()
+    upload_and_discover(app, "local-bop-demo.xml")
+    app.button(key="select_reference_DSD_BOP").click().run()
+
+    command = next(button for button in app.button if button.label == "Run AI recommendations")
+
+    assert command.disabled is True
+    assert app.session_state.recommendations == {}
+
+
+def test_ai_recommendations_run_explicitly_and_render_grounded_evidence(monkeypatch):
+    class ReadyMatcher:
+        provider_name = "fake"
+        recommendations = 0
+
+        def is_ready(self):
+            return ProviderReadiness(ready=True, message="ready")
+
+        def match(self, request):
+            raise AssertionError("comparison must not run AI automatically")
+
+        def recommend(self, request):
+            type(self).recommendations += 1
+            return StandardsRecommendationResult(
+                local_element_id=request.local.id,
+                reference_element_id=request.reference.id,
+                code_ids=[],
+                recommendation="Reuse the selected reference concept after expert review.",
+                reason="The supplied local and reference definitions support this candidate alignment.",
+                evidence=["Both element identifiers are present in the selected comparison."],
+                citation_ids=[request.citations[0].id] if request.citations else [],
+                principle_id=request.principles[0].id if request.principles else None,
+                confidence=0.84,
+                provider="fake",
+                model="grounded-test-model",
+                grounding_status="grounded",
+            )
+
+        def complete(self, question, context):
+            return "not used"
+
+    monkeypatch.setattr(
+        "sdmx_alignment.semantic_matcher.factory.create_matcher",
+        lambda settings: ReadyMatcher(),
+    )
+    app = AppTest.from_file(Path(__file__).parents[1] / "app.py", default_timeout=30).run()
+    upload_and_discover(app, "local-bop-demo.xml")
+    app.button(key="select_reference_DSD_BOP").click().run()
+
+    assert ReadyMatcher.recommendations == 0
+    methodology = next(item for item in app.selectbox if item.label == "Methodology")
+    methodology.select("BPM7").run()
+    command = next(button for button in app.button if button.label == "Run AI recommendations")
+    assert command.disabled is False
+    command.click().run()
+
+    rendered = "\n".join(
+        str(item.value)
+        for collection in (app.markdown, app.caption, app.info, app.warning)
+        for item in collection
+    )
+    assert not app.exception
+    assert ReadyMatcher.recommendations > 0
+    assert app.session_state.recommendations
+    assert "Reuse the selected reference concept after expert review." in rendered
+    assert "The supplied local and reference definitions support this candidate alignment." in rendered
+    assert "Both element identifiers are present" in rendered
+    assert "AI-assisted recommendation" in rendered
+    assert "BPM7_CONTEXT" in rendered
+    assert "BPM7" in rendered

@@ -468,7 +468,7 @@ Run semantic/recommendation tests and full suite.
 - Modify: `tests/test_reporting.py`
 - Modify: `tests/test_alignment_workflow.py`
 
-- [ ] **Step 1: Write failing integration tests**
+- [x] **Step 1: Write failing integration tests**
 
 Assert the UI shows local element, reference/principle, recommendation, reason, evidence, origin, and citation. Assert `Run AI recommendations` is disabled when no provider is ready and enabled with a fake ready matcher.
 
@@ -480,27 +480,27 @@ assert payload["recommendation_summary"]["deterministic"] >= 1
 assert "grounding_status" in payload["original_comparison"]["findings"][0]
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run AppTest, reporting, and workflow tests.
 
-- [ ] **Step 3: Stop automatic AI execution during comparison**
+- [x] **Step 3: Stop automatic AI execution during comparison**
 
 Change `run_comparison` to run `compare_structures` and deterministic recommendation construction only. Add an explicit `Run AI recommendations` command after reference and methodology selection.
 
-- [ ] **Step 4: Render recommendation evidence safely**
+- [x] **Step 4: Render recommendation evidence safely**
 
 Use Streamlit text and links rather than injecting model output as raw HTML. Show an AI badge only for AI-origin results and always state human review is required. Render citations only from the trusted catalog.
 
-- [ ] **Step 5: Reuse existing review controls**
+- [x] **Step 5: Reuse existing review controls**
 
 Keep all five statuses and `apply_review`. Do not add AI-only approval paths. An accepted advisory recommendation uses the existing `REUSE` action so it enters the reviewed audit plan without mutating XML; rejected, unresolved, and no-action recommendations retain their existing semantics.
 
-- [ ] **Step 6: Extend audit exports**
+- [x] **Step 6: Extend audit exports**
 
 Add selected source status, structural reference provenance, selected methodology, recommendation counts, grounding status, provider/model, citations, reviewer decisions, and transformation outcomes. Never export credentials or full provider prompts.
 
-- [ ] **Step 7: Verify GREEN**
+- [x] **Step 7: Verify GREEN**
 
 Run focused integration tests and the full suite.
 
