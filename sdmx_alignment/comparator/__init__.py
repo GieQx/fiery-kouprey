@@ -1,0 +1,2 @@
+"""Deterministic SDMX comparison."""
+

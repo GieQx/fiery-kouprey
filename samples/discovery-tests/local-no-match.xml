@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+  xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+  xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <mes:Structures>
+    <str:Concepts>
+      <str:ConceptScheme agencyID="PSA_DEMO" id="CS_LOCAL_MARINE" version="1.0">
+        <str:Concept id="SALINITY_METHOD"><com:Name xml:lang="en">Salinity measurement method</com:Name><com:Description xml:lang="en">Laboratory or sensor method used to determine salinity</com:Description></str:Concept>
+        <str:Concept id="WATER_DEPTH"><com:Name xml:lang="en">Water depth</com:Name><com:Description xml:lang="en">Depth below the water surface in metres</com:Description></str:Concept>
+        <str:Concept id="SAMPLE_MEDIUM"><com:Name xml:lang="en">Sample medium</com:Name><com:Description xml:lang="en">Physical medium from which a marine sample was collected</com:Description></str:Concept>
+      </str:ConceptScheme>
+    </str:Concepts>
+    <str:DataStructures>
+      <str:DataStructure agencyID="PSA_DEMO" id="DSD_LOCAL_MARINE" version="1.0">
+        <com:Name xml:lang="en">Marine chemistry measurement structure</com:Name>
+        <com:Description xml:lang="en">Synthetic no-match benchmark outside the curated library domains</com:Description>
+        <str:DataStructureComponents>
+          <str:DimensionList id="DimensionDescriptor">
+            <str:Dimension id="SALINITY_METHOD" position="1"><str:ConceptIdentity><Ref id="SALINITY_METHOD" maintainableParentID="CS_LOCAL_MARINE" agencyID="PSA_DEMO"/></str:ConceptIdentity></str:Dimension>
+            <str:Dimension id="WATER_DEPTH" position="2"><str:ConceptIdentity><Ref id="WATER_DEPTH" maintainableParentID="CS_LOCAL_MARINE" agencyID="PSA_DEMO"/></str:ConceptIdentity><str:LocalRepresentation><str:TextFormat textType="Decimal"/></str:LocalRepresentation></str:Dimension>
+            <str:Dimension id="SAMPLE_MEDIUM" position="3"><str:ConceptIdentity><Ref id="SAMPLE_MEDIUM" maintainableParentID="CS_LOCAL_MARINE" agencyID="PSA_DEMO"/></str:ConceptIdentity></str:Dimension>
+          </str:DimensionList>
+        </str:DataStructureComponents>
+      </str:DataStructure>
+    </str:DataStructures>
+  </mes:Structures>
+</mes:Structure>
+

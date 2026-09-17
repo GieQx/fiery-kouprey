@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+  xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+  xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <mes:Structures>
+    <str:Concepts>
+      <str:ConceptScheme agencyID="PSA_DEMO" id="CS_LOCAL_MIXED" version="1.0">
+        <str:Concept id="REF_AREA"><com:Name xml:lang="en">Reference area</com:Name></str:Concept>
+        <str:Concept id="FREQ"><com:Name xml:lang="en">Frequency</com:Name></str:Concept>
+      </str:ConceptScheme>
+    </str:Concepts>
+    <str:DataStructures>
+      <str:DataStructure agencyID="PSA_DEMO" id="DSD_LOCAL_MIXED" version="1.0">
+        <com:Name xml:lang="en">Cross-domain reporting structure</com:Name>
+        <com:Description xml:lang="en">Synthetic benchmark with only generic dimensions</com:Description>
+        <str:DataStructureComponents>
+          <str:DimensionList id="DimensionDescriptor">
+            <str:Dimension id="REF_AREA" position="1"><str:ConceptIdentity><Ref id="REF_AREA" maintainableParentID="CS_LOCAL_MIXED" agencyID="PSA_DEMO"/></str:ConceptIdentity></str:Dimension>
+            <str:Dimension id="FREQ" position="2"><str:ConceptIdentity><Ref id="FREQ" maintainableParentID="CS_LOCAL_MIXED" agencyID="PSA_DEMO"/></str:ConceptIdentity></str:Dimension>
+          </str:DimensionList>
+        </str:DataStructureComponents>
+      </str:DataStructure>
+    </str:DataStructures>
+  </mes:Structures>
+</mes:Structure>
+

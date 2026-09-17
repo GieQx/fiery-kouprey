@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+  xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+  xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <mes:Structures>
+    <str:Codelists>
+      <str:Codelist agencyID="SDMX" id="CL_REF_AREA" version="1.0">
+        <com:Name xml:lang="en">Reference area</com:Name>
+        <str:Code id="PHL"><com:Name xml:lang="en">Philippines</com:Name></str:Code>
+        <str:Code id="KOR"><com:Name xml:lang="en">Korea</com:Name></str:Code>
+      </str:Codelist>
+      <str:Codelist agencyID="SDMX" id="CL_SEX" version="1.0">
+        <com:Name xml:lang="en">Sex</com:Name>
+        <str:Code id="M"><com:Name xml:lang="en">Male</com:Name></str:Code>
+        <str:Code id="F"><com:Name xml:lang="en">Female</com:Name></str:Code>
+        <str:Code id="T"><com:Name xml:lang="en">Total</com:Name></str:Code>
+      </str:Codelist>
+    </str:Codelists>
+    <str:Concepts>
+      <str:ConceptScheme agencyID="SDMX" id="CS_REFERENCE" version="2.0">
+        <str:Concept id="REF_AREA"><com:Name xml:lang="en">Reference area</com:Name><com:Description xml:lang="en">Geographic reference area of an observation</com:Description></str:Concept>
+        <str:Concept id="SEX"><com:Name xml:lang="en">Sex</com:Name></str:Concept>
+        <str:Concept id="STATUS_IN_EMPLOYMENT"><com:Name xml:lang="en">Status in employment</com:Name><com:Description xml:lang="en">Employment relationship of a person</com:Description></str:Concept>
+        <str:Concept id="AGE_GROUP"><com:Name xml:lang="en">Age group</com:Name></str:Concept>
+        <str:Concept id="FREQ"><com:Name xml:lang="en">Frequency</com:Name></str:Concept>
+        <str:Concept id="UNIT_MULT"><com:Name xml:lang="en">Unit multiplier</com:Name></str:Concept>
+      </str:ConceptScheme>
+    </str:Concepts>
+    <str:DataStructures>
+      <str:DataStructure agencyID="SDMX" id="DSD_REFERENCE_EMP" version="2.0">
+        <com:Name xml:lang="en">Reference employment structure</com:Name>
+        <str:DataStructureComponents>
+          <str:DimensionList id="DimensionDescriptor">
+            <str:Dimension id="REF_AREA" position="1"><str:ConceptIdentity><Ref id="REF_AREA" maintainableParentID="CS_REFERENCE" agencyID="SDMX"/></str:ConceptIdentity><str:LocalRepresentation><str:Enumeration><Ref id="CL_REF_AREA" agencyID="SDMX" version="1.0"/></str:Enumeration></str:LocalRepresentation></str:Dimension>
+            <str:Dimension id="SEX" position="2"><str:ConceptIdentity><Ref id="SEX" maintainableParentID="CS_REFERENCE" agencyID="SDMX"/></str:ConceptIdentity><str:LocalRepresentation><str:Enumeration><Ref id="CL_SEX" agencyID="SDMX" version="1.0"/></str:Enumeration></str:LocalRepresentation></str:Dimension>
+            <str:Dimension id="STATUS_IN_EMPLOYMENT" position="3"><str:ConceptIdentity><Ref id="STATUS_IN_EMPLOYMENT" maintainableParentID="CS_REFERENCE" agencyID="SDMX"/></str:ConceptIdentity><str:LocalRepresentation><str:TextFormat textType="String" minLength="1" maxLength="18"/></str:LocalRepresentation></str:Dimension>
+            <str:Dimension id="AGE_GROUP" position="4"><str:ConceptIdentity><Ref id="AGE_GROUP" maintainableParentID="CS_REFERENCE" agencyID="SDMX"/></str:ConceptIdentity></str:Dimension>
+            <str:Dimension id="FREQ" position="5"><str:ConceptIdentity><Ref id="FREQ" maintainableParentID="CS_REFERENCE" agencyID="SDMX"/></str:ConceptIdentity></str:Dimension>
+          </str:DimensionList>
+          <str:AttributeList id="AttributeDescriptor">
+            <str:Attribute id="UNIT_MULT" assignmentStatus="Conditional"><str:ConceptIdentity><Ref id="UNIT_MULT" maintainableParentID="CS_REFERENCE" agencyID="SDMX"/></str:ConceptIdentity></str:Attribute>
+          </str:AttributeList>
+        </str:DataStructureComponents>
+      </str:DataStructure>
+    </str:DataStructures>
+  </mes:Structures>
+</mes:Structure>
+

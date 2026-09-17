@@ -1,0 +1,95 @@
+{
+  "standards": [
+    {
+      "agency_id": "SDMX",
+      "artefact_id": "DSD_REFERENCE_EMP",
+      "version": "2.0",
+      "name": "Employment reference benchmark",
+      "description": "Synthetic employment reference for offline hackathon demonstration",
+      "domain": "labour",
+      "issuer": "SDMX workshop demonstration library",
+      "artefact_type": "structural_reference",
+      "provenance": "Hackathon benchmark fixture",
+      "source_url": null,
+      "retrieved_at": "2026-09-17",
+      "fixture_classification": "synthetic_benchmark",
+      "local_file": "reference-employment.xml"
+    },
+    {
+      "agency_id": "DEMO",
+      "artefact_id": "DSD_REFERENCE_TOURISM",
+      "version": "1.0",
+      "name": "Tourism reference benchmark",
+      "description": "Synthetic tourism reference used as a weaker discovery candidate",
+      "domain": "tourism",
+      "issuer": "SDMX workshop demonstration library",
+      "artefact_type": "structural_reference",
+      "provenance": "Hackathon benchmark fixture",
+      "source_url": null,
+      "retrieved_at": "2026-09-17",
+      "fixture_classification": "synthetic_benchmark",
+      "local_file": "reference-tourism.xml"
+    },
+    {
+      "agency_id": "DEMO",
+      "artefact_id": "DSD_REFERENCE_CPI",
+      "version": "1.0",
+      "name": "Consumer price reference benchmark",
+      "description": "Synthetic price statistics reference used as a weaker discovery candidate",
+      "domain": "prices",
+      "issuer": "SDMX workshop demonstration library",
+      "artefact_type": "structural_reference",
+      "provenance": "Hackathon benchmark fixture",
+      "source_url": null,
+      "retrieved_at": "2026-09-17",
+      "fixture_classification": "synthetic_benchmark",
+      "local_file": "reference-prices.xml"
+    },
+    {
+      "agency_id": "SDMXWS",
+      "artefact_id": "DSD_BOP",
+      "version": "1.0",
+      "name": "Balance of Payments workshop structural reference",
+      "description": "Workshop-supplied SDMX structure used to demonstrate external-sector alignment; it is not presented as an IMF-maintained DSD",
+      "domain": "external_sector",
+      "issuer": "MODS-OECD-ADB Global Workshop 2026",
+      "artefact_type": "structural_reference",
+      "provenance": "Workshop file: DF_BOP dataflow with all refs.xml",
+      "source_url": null,
+      "retrieved_at": "2026-09-17",
+      "fixture_classification": "workshop_reference",
+      "local_file": "reference-bop-workshop.xml",
+      "related_sources": [
+        {
+          "id": "BPM7",
+          "name": "Balance of Payments and International Investment Position Manual, Seventh Edition",
+          "issuer": "International Monetary Fund",
+          "version": "BPM7 (2025)",
+          "artefact_type": "methodological_standard",
+          "description": "Global methodological standard for external sector statistics released in 2025",
+          "source_url": "https://www.imf.org/en/publications/policy-papers/issues/2025/07/10/release-of-new-standards-for-macroeconomic-statistics-bpm7-568453",
+          "published_at": "2025-03-20"
+        },
+        {
+          "id": "BPM6",
+          "name": "Balance of Payments and International Investment Position Manual, Sixth Edition",
+          "issuer": "International Monetary Fund",
+          "version": "BPM6",
+          "artefact_type": "methodological_standard",
+          "description": "Predecessor international methodology for balance of payments and international investment position statistics",
+          "source_url": "https://www.imf.org/en/publications/manuals-guides/issues/2016/12/31/balance-of-payments-manual-sixth-edition-22588",
+          "published_at": "2010-01-11"
+        },
+        {
+          "id": "SDMX_GLOBAL_REGISTRY",
+          "name": "SDMX Global Registry",
+          "issuer": "SDMX Sponsors",
+          "version": "Live registry",
+          "artefact_type": "shared_sdmx_artefact_source",
+          "description": "Authoritative registry source for shared SDMX structures and codelists",
+          "source_url": "https://registry.sdmx.org/"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+  xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+  xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <mes:Structures>
+    <str:Codelists>
+      <str:Codelist agencyID="DEMO" id="CL_COICOP" version="1.0">
+        <com:Name xml:lang="en">Consumption classification</com:Name>
+        <str:Code id="01"><com:Name xml:lang="en">Food and non-alcoholic beverages</com:Name></str:Code>
+        <str:Code id="02"><com:Name xml:lang="en">Alcoholic beverages and tobacco</com:Name></str:Code>
+      </str:Codelist>
+    </str:Codelists>
+    <str:Concepts>
+      <str:ConceptScheme agencyID="DEMO" id="CS_PRICES" version="1.0">
+        <str:Concept id="REF_AREA"><com:Name xml:lang="en">Reference area</com:Name></str:Concept>
+        <str:Concept id="COICOP"><com:Name xml:lang="en">Consumption classification</com:Name></str:Concept>
+        <str:Concept id="FREQ"><com:Name xml:lang="en">Frequency</com:Name></str:Concept>
+      </str:ConceptScheme>
+    </str:Concepts>
+    <str:DataStructures>
+      <str:DataStructure agencyID="DEMO" id="DSD_REFERENCE_CPI" version="1.0">
+        <com:Name xml:lang="en">Consumer price reference benchmark</com:Name>
+        <str:DataStructureComponents>
+          <str:DimensionList id="DimensionDescriptor">
+            <str:Dimension id="REF_AREA" position="1"><str:ConceptIdentity><Ref id="REF_AREA" maintainableParentID="CS_PRICES" agencyID="DEMO"/></str:ConceptIdentity></str:Dimension>
+            <str:Dimension id="COICOP" position="2"><str:ConceptIdentity><Ref id="COICOP" maintainableParentID="CS_PRICES" agencyID="DEMO"/></str:ConceptIdentity><str:LocalRepresentation><str:Enumeration><Ref id="CL_COICOP" agencyID="DEMO" version="1.0"/></str:Enumeration></str:LocalRepresentation></str:Dimension>
+            <str:Dimension id="FREQ" position="3"><str:ConceptIdentity><Ref id="FREQ" maintainableParentID="CS_PRICES" agencyID="DEMO"/></str:ConceptIdentity></str:Dimension>
+          </str:DimensionList>
+        </str:DataStructureComponents>
+      </str:DataStructure>
+    </str:DataStructures>
+  </mes:Structures>
+</mes:Structure>
+
