@@ -1,0 +1,44 @@
+{
+  "sources": [
+    {
+      "id": "SDMX_GLOBAL_REGISTRY",
+      "name": "SDMX Global Registry",
+      "source_type": "registry",
+      "base_url": "https://registry.sdmx.org/sdmx/v2/",
+      "trust_level": "authoritative",
+      "is_default": true
+    },
+    {
+      "id": "IMF",
+      "name": "IMF SDMX Central Registry",
+      "source_type": "registry",
+      "base_url": "https://sdmxcentral.imf.org/ws/public/sdmxapi/rest/",
+      "trust_level": "authoritative",
+      "is_default": false
+    },
+    {
+      "id": "OECD",
+      "name": "Organisation for Economic Co-operation and Development",
+      "source_type": "institutional_repository",
+      "base_url": "https://sdmx.oecd.org/public/rest/",
+      "trust_level": "authoritative",
+      "is_default": false
+    },
+    {
+      "id": "EUROSTAT",
+      "name": "Euro SDMX Registry",
+      "source_type": "registry",
+      "base_url": "https://webgate.ec.europa.eu/fusionregistry/sdmx/v2/",
+      "trust_level": "authoritative",
+      "is_default": false
+    },
+    {
+      "id": "CURATED_LOCAL",
+      "name": "Curated local reference library",
+      "source_type": "curated_repository",
+      "base_url": "http://localhost/reference_library/",
+      "trust_level": "curated",
+      "is_default": false
+    }
+  ]
+}

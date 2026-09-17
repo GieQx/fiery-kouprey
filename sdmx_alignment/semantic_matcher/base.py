@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import Protocol
 
 from sdmx_alignment.models.findings import Finding
+from sdmx_alignment.models.recommendations import (
+    StandardsRecommendationRequest,
+    StandardsRecommendationResult,
+)
 from sdmx_alignment.models.semantic import (
     ProviderReadiness,
     SemanticElement,
@@ -17,6 +21,10 @@ class SemanticMatcher(Protocol):
     def is_ready(self) -> ProviderReadiness: ...
 
     def match(self, request: SemanticMatchRequest) -> SemanticMatchResult: ...
+
+    def recommend(
+        self, request: StandardsRecommendationRequest
+    ) -> StandardsRecommendationResult: ...
 
     def complete(self, question: str, context: dict) -> str: ...
 

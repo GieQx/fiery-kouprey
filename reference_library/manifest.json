@@ -13,6 +13,9 @@
       "source_url": null,
       "retrieved_at": "2026-09-17",
       "fixture_classification": "synthetic_benchmark",
+      "source_id": "CURATED_LOCAL",
+      "retrieval_mode": "curated",
+      "trust_level": "curated",
       "local_file": "reference-employment.xml"
     },
     {
@@ -28,6 +31,9 @@
       "source_url": null,
       "retrieved_at": "2026-09-17",
       "fixture_classification": "synthetic_benchmark",
+      "source_id": "CURATED_LOCAL",
+      "retrieval_mode": "curated",
+      "trust_level": "curated",
       "local_file": "reference-tourism.xml"
     },
     {
@@ -43,6 +49,9 @@
       "source_url": null,
       "retrieved_at": "2026-09-17",
       "fixture_classification": "synthetic_benchmark",
+      "source_id": "CURATED_LOCAL",
+      "retrieval_mode": "curated",
+      "trust_level": "curated",
       "local_file": "reference-prices.xml"
     },
     {
@@ -58,17 +67,19 @@
       "source_url": null,
       "retrieved_at": "2026-09-17",
       "fixture_classification": "workshop_reference",
+      "source_id": "CURATED_LOCAL",
+      "retrieval_mode": "curated",
+      "trust_level": "curated",
       "local_file": "reference-bop-workshop.xml",
       "related_sources": [
         {
           "id": "BPM7",
-          "name": "Balance of Payments and International Investment Position Manual, Seventh Edition",
+          "name": "Integrated Balance of Payments and International Investment Position Manual, Seventh Edition",
           "issuer": "International Monetary Fund",
           "version": "BPM7 (2025)",
           "artefact_type": "methodological_standard",
-          "description": "Global methodological standard for external sector statistics released in 2025",
-          "source_url": "https://www.imf.org/en/publications/policy-papers/issues/2025/07/10/release-of-new-standards-for-macroeconomic-statistics-bpm7-568453",
-          "published_at": "2025-03-20"
+          "description": "Official IMF methodological manual for balance of payments and international investment position statistics",
+          "source_url": "https://data.imf.org/-/media/iData/External-Storage/Documents/5B776E0E552E4881AF24042EAE7D049B/en/1-BPM7-White-Cover.pdf"
         },
         {
           "id": "BPM6",

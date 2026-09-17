@@ -1,0 +1,42 @@
+{
+  "methodologies": [
+    {
+      "id": "BPM7",
+      "name": "Integrated Balance of Payments and International Investment Position Manual, Seventh Edition",
+      "issuer": "International Monetary Fund",
+      "version": "BPM7 (2025)",
+      "description": "Official IMF methodological manual for balance of payments and international investment position statistics",
+      "source_url": "https://data.imf.org/-/media/iData/External-Storage/Documents/5B776E0E552E4881AF24042EAE7D049B/en/1-BPM7-White-Cover.pdf",
+      "domains": [
+        "external_sector"
+      ],
+      "published_at": null,
+      "principles": [
+        {
+          "id": "BPM7_CONTEXT",
+          "text": "Consult BPM7 for contextual guidance on balance of payments and international investment position statistics.",
+          "source_url": "https://data.imf.org/-/media/iData/External-Storage/Documents/5B776E0E552E4881AF24042EAE7D049B/en/1-BPM7-White-Cover.pdf"
+        }
+      ]
+    },
+    {
+      "id": "BPM6",
+      "name": "Balance of Payments and International Investment Position Manual, Sixth Edition",
+      "issuer": "International Monetary Fund",
+      "version": "BPM6",
+      "description": "Predecessor international methodology for balance of payments and international investment position statistics",
+      "source_url": "https://www.imf.org/en/publications/manuals-guides/issues/2016/12/31/balance-of-payments-manual-sixth-edition-22588",
+      "domains": [
+        "external_sector"
+      ],
+      "published_at": "2010-01-11",
+      "principles": [
+        {
+          "id": "BPM6_CONTEXT",
+          "text": "Consult BPM6 for contextual guidance on balance of payments and international investment position statistics.",
+          "source_url": "https://www.imf.org/en/publications/manuals-guides/issues/2016/12/31/balance-of-payments-manual-sixth-edition-22588"
+        }
+      ]
+    }
+  ]
+}

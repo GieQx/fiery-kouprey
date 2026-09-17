@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import pandas as pd
@@ -40,6 +41,26 @@ SCORE_LABELS = {
     "limitations": "Unresolved issues and limitations",
     "evidence": "Claim-level DSD evidence",
 }
+ANALYSIS_STATE_DEFAULTS = {
+    "local_structure": None,
+    "reference_structure": None,
+    "discovery_result": None,
+    "selected_reference_identity": None,
+    "comparison": None,
+    "alignment_plan": None,
+    "evaluation": None,
+    "baseline_answer": "",
+    "improved_answer": "",
+    "answer_snapshot": None,
+    "original_xml": None,
+    "upload_resolution_message": None,
+    "reference_xml": None,
+    "transformation": None,
+    "technical_validation": None,
+    "reference_alignment": None,
+    "revised_comparison": None,
+    "before_after": None,
+}
 
 
 st.set_page_config(page_title="AI-Assisted SDMX Standards Alignment Workbench", page_icon="SA", layout="wide")
@@ -63,29 +84,15 @@ st.markdown(
 
 
 def initialize_state():
-    defaults = {
-        "local_structure": None,
-        "reference_structure": None,
-        "discovery_result": None,
-        "selected_reference_identity": None,
-        "comparison": None,
-        "alignment_plan": None,
-        "evaluation": None,
-        "baseline_answer": "",
-        "improved_answer": "",
-        "answer_snapshot": None,
-        "original_xml": None,
-        "upload_resolution_message": None,
-        "reference_xml": None,
-        "transformation": None,
-        "technical_validation": None,
-        "reference_alignment": None,
-        "revised_comparison": None,
-        "before_after": None,
-    }
+    defaults = {**ANALYSIS_STATE_DEFAULTS, "upload_fingerprint": None}
     for key, value in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+
+def clear_analysis_state():
+    for key, value in ANALYSIS_STATE_DEFAULTS.items():
+        st.session_state[key] = value
 
 
 @st.cache_data(ttl=15, show_spinner=False)
@@ -175,24 +182,12 @@ def run_comparison(local: DSDStructure, reference: DSDStructure, matcher):
 def load_local_structure(file_name: str, xml_bytes: bytes, library: list[LibraryEntry]):
     resolution = resolve_uploaded_structure(file_name, xml_bytes, library)
     local = resolution.structure
+    discovery_result = discover_candidates(local, library)
+    clear_analysis_state()
     st.session_state.local_structure = local
-    st.session_state.discovery_result = discover_candidates(local, library)
-    st.session_state.selected_reference_identity = None
-    st.session_state.reference_structure = None
-    st.session_state.comparison = None
-    st.session_state.alignment_plan = None
-    st.session_state.evaluation = None
-    st.session_state.baseline_answer = ""
-    st.session_state.improved_answer = ""
-    st.session_state.answer_snapshot = None
+    st.session_state.discovery_result = discovery_result
     st.session_state.original_xml = resolution.structure_xml
     st.session_state.upload_resolution_message = resolution.message
-    st.session_state.reference_xml = None
-    st.session_state.transformation = None
-    st.session_state.technical_validation = None
-    st.session_state.reference_alignment = None
-    st.session_state.revised_comparison = None
-    st.session_state.before_after = None
 
 
 def select_reference(entry: LibraryEntry, matcher):
@@ -273,43 +268,30 @@ def render_discovery_candidates(library: list[LibraryEntry], matcher):
 def render_source_selection(library: list[LibraryEntry], matcher):
     st.subheader("1. Discover - Upload Local DSD")
     local_file = st.file_uploader("Local DSD", type=["xml"], key="local_upload")
+    local_xml = local_file.getvalue() if local_file else None
+    upload_fingerprint = (
+        (local_file.name, hashlib.sha256(local_xml).hexdigest())
+        if local_file
+        else None
+    )
+    if upload_fingerprint != st.session_state.upload_fingerprint:
+        clear_analysis_state()
+        st.session_state.upload_fingerprint = upload_fingerprint
     if local_file:
         st.caption(f"{local_file.name} | {local_file.size:,} bytes")
 
-    action_left, action_bop, action_right, _ = st.columns([1, 1, 1, 2])
-    with action_left:
-        if st.button("Load local demo", key="load_local_demo", width="stretch"):
-            try:
-                load_local_structure(
-                    "local-demo.xml",
-                    (BASE_DIR / "samples" / "local-demo.xml").read_bytes(),
-                    library,
-                )
-            except Exception as exc:
-                st.error(str(exc))
-    with action_bop:
-        if st.button("Load BOP demo", key="load_bop_demo", width="stretch"):
-            try:
-                load_local_structure(
-                    "local-bop-demo.xml",
-                    (BASE_DIR / "samples" / "local-bop-demo.xml").read_bytes(),
-                    library,
-                )
-            except Exception as exc:
-                st.error(str(exc))
-    with action_right:
-        if st.button(
-            "Discover standards",
-            type="primary",
-            width="stretch",
-            disabled=local_file is None,
-        ):
-            try:
-                load_local_structure(local_file.name, local_file.getvalue(), library)
-            except StructureParseError as exc:
-                st.error(str(exc))
-            except Exception:
-                st.error("Standards discovery could not be completed. Check the local DSD and library configuration.")
+    if st.button(
+        "Discover standards",
+        type="primary",
+        width="stretch",
+        disabled=local_file is None,
+    ):
+        try:
+            load_local_structure(local_file.name, local_xml, library)
+        except StructureParseError as exc:
+            st.error(str(exc))
+        except Exception:
+            st.error("Standards discovery could not be completed. Check the local DSD and library configuration.")
 
     local = st.session_state.local_structure
     if local:
@@ -367,37 +349,6 @@ def render_finding_detail(finding):
         st.dataframe(pd.DataFrame([item.model_dump() for item in finding.code_mappings]), width="stretch")
 
 
-def apply_bop_demo_decisions(result):
-    for finding in result.findings:
-        if finding.review_status == "not_required":
-            continue
-        if finding.local and finding.reference:
-            apply_review(
-                result,
-                finding.id,
-                "accepted",
-                "MAP",
-                "BOP demo decision: reviewed local and reference evidence; approve deterministic mapping.",
-            )
-        elif finding.reference:
-            apply_review(
-                result,
-                finding.id,
-                "accepted",
-                "ADD_MISSING_ELEMENT",
-                "BOP demo decision: add the exact component from the selected workshop reference.",
-            )
-        else:
-            apply_review(
-                result,
-                finding.id,
-                "no_action",
-                None,
-                "BOP demo decision: retain this legitimate local extension unchanged.",
-            )
-    return build_alignment_plan(result)
-
-
 def render_review_tab(result):
     plan = st.session_state.alignment_plan
     if plan and plan.status == "final":
@@ -408,18 +359,6 @@ def render_review_tab(result):
             plan.finalized_at = None
             st.rerun()
         return
-    if result.local_dsd.id == "DSD_LOCAL_BOP":
-        st.caption(
-            "Demo accelerator: explicitly records a reviewed decision for every BOP finding. "
-            "It is available only for the built-in synthetic demo."
-        )
-        if st.button(
-            "Apply transparent BOP demo decisions",
-            key="apply_bop_demo_decisions",
-            type="primary",
-        ):
-            st.session_state.alignment_plan = apply_bop_demo_decisions(result)
-            st.rerun()
     finding_id = st.selectbox(
         "Finding",
         [item.id for item in result.findings],

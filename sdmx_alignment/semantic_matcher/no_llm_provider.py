@@ -1,3 +1,7 @@
+from sdmx_alignment.models.recommendations import (
+    StandardsRecommendationRequest,
+    StandardsRecommendationResult,
+)
 from sdmx_alignment.models.semantic import ProviderReadiness, SemanticMatchRequest, SemanticMatchResult
 from sdmx_alignment.semantic_matcher.base import BaseProvider, ProviderError
 
@@ -12,6 +16,11 @@ class NoLLMProvider(BaseProvider):
         return ProviderReadiness(ready=False, message=self.message)
 
     def match(self, request: SemanticMatchRequest) -> SemanticMatchResult:
+        raise ProviderError(self.message)
+
+    def recommend(
+        self, request: StandardsRecommendationRequest
+    ) -> StandardsRecommendationResult:
         raise ProviderError(self.message)
 
     def complete(self, question: str, context: dict) -> str:

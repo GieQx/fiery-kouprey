@@ -60,7 +60,7 @@
 - Modify: `app.py:273-322`
 - Modify: `app.py:370-420`
 
-- [ ] **Step 1: Replace button-dependent AppTests with upload tests**
+- [x] **Step 1: Replace button-dependent AppTests with upload tests**
 
 Change the initial assertions to:
 
@@ -72,7 +72,7 @@ assert all(button.label != "Apply transparent BOP demo decisions" for button in 
 
 Upload `tests/fixtures/local-demo.xml`, run `Discover standards`, and select `DSD_REFERENCE_EMP`. Upload `tests/fixtures/local-bop-demo.xml` for the BOP source test.
 
-- [ ] **Step 2: Run the focused AppTests and verify RED**
+- [x] **Step 2: Run the focused AppTests and verify RED**
 
 Run:
 
@@ -82,7 +82,7 @@ Run:
 
 Expected: failures because the demo buttons and BOP automatic-decision control still exist.
 
-- [ ] **Step 3: Remove only the production UI dependencies**
+- [x] **Step 3: Remove only the production UI dependencies**
 
 In `render_source_selection`, replace the three-column demo/upload toolbar with one upload action:
 
@@ -98,7 +98,7 @@ if st.button(
 
 Delete `apply_bop_demo_decisions` and its button branch. Keep `samples/` and all parser/comparator fixtures.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run the focused AppTests and then:
 
@@ -120,7 +120,7 @@ Expected: all tests pass after obsolete expectations are updated.
 - Create: `sdmx_alignment/reference_sources/catalog.py`
 - Create: `tests/test_reference_sources.py`
 
-- [ ] **Step 1: Write failing catalog tests**
+- [x] **Step 1: Write failing catalog tests**
 
 Add tests asserting:
 
@@ -139,11 +139,11 @@ assert bpm7.principles
 assert all(item.source_url == bpm7.source_url for item in bpm7.principles)
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Run `pytest tests/test_reference_sources.py -q` and expect import/model failures.
 
-- [ ] **Step 3: Implement Pydantic source contracts**
+- [x] **Step 3: Implement Pydantic source contracts**
 
 Add models equivalent to:
 
@@ -175,11 +175,11 @@ class MethodologyStandard(BaseModel):
 
 Extend `ReferenceStandard` with `source_id`, `retrieval_mode`, `trust_level`, and `retrieved_at`, using backward-compatible defaults while the manifest is migrated.
 
-- [ ] **Step 4: Add explicit JSON catalogs**
+- [x] **Step 4: Add explicit JSON catalogs**
 
 Set `SDMX_GLOBAL_REGISTRY` as the sole default source. Include official canonical URLs for IMF, OECD, and Eurostat and keep `CURATED_LOCAL` visibly non-authoritative. Add BPM7 and BPM6 with only bounded, cited principles used by the recommendation agent.
 
-- [ ] **Step 5: Implement strict catalog loaders and verify GREEN**
+- [x] **Step 5: Implement strict catalog loaders and verify GREEN**
 
 Use `model_validate` for every row, reject duplicate IDs, and reject more than one default source. Run `tests/test_reference_sources.py` and the full suite.
 
@@ -195,7 +195,7 @@ Use `model_validate` for every row, reject duplicate IDs, and reject more than o
 - Modify: `tests/test_reference_library.py`
 - Modify: `tests/test_discovery.py`
 
-- [ ] **Step 1: Add failing source-priority tests**
+- [x] **Step 1: Add failing source-priority tests**
 
 Assert every library entry has a source and retrieval mode. Add an equal-evidence fixture pair and verify authoritative registry cache wins the tie:
 
@@ -204,11 +204,11 @@ result = discover_candidates(local, [curated_entry, registry_entry])
 assert result.candidates[0].reference.source_id == "SDMX_GLOBAL_REGISTRY"
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run `pytest tests/test_reference_library.py tests/test_discovery.py -q`.
 
-- [ ] **Step 3: Migrate the manifest**
+- [x] **Step 3: Migrate the manifest**
 
 Add these fields to each standard:
 
@@ -222,11 +222,11 @@ Add these fields to each standard:
 
 Registry-derived cached artefacts use `SDMX_GLOBAL_REGISTRY`, `cache`, and `authoritative`. Do not mislabel the workshop BOP file as registry-maintained.
 
-- [ ] **Step 4: Add trust as a tie-breaker, not a relevance substitute**
+- [x] **Step 4: Add trust as a tie-breaker, not a relevance substitute**
 
 Keep current evidence scoring first. Add a trust rank only after evidence tier and meaningful evidence count so an irrelevant authoritative DSD cannot outrank a relevant curated DSD.
 
-- [ ] **Step 5: Verify GREEN**
+- [x] **Step 5: Verify GREEN**
 
 Run focused tests, then the full suite.
 
@@ -242,7 +242,7 @@ Run focused tests, then the full suite.
 - Create: `sdmx_alignment/reference_sources/__init__.py`
 - Modify: `tests/test_reference_sources.py`
 
-- [ ] **Step 1: Write failing HTTP-adapter tests with `httpx.MockTransport`**
+- [x] **Step 1: Write failing HTTP-adapter tests with `httpx.MockTransport`**
 
 Cover:
 
@@ -255,11 +255,11 @@ assert result.source_id == "SDMX_GLOBAL_REGISTRY"
 
 Also test timeout, non-2xx response, oversized body, malformed XML, and identity mismatch. Every failure must return a typed refresh result and preserve the supplied cache.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run `pytest tests/test_reference_sources.py -q`.
 
-- [ ] **Step 3: Implement the source protocol**
+- [x] **Step 3: Implement the source protocol**
 
 ```python
 class ReferenceSource(Protocol):
@@ -273,13 +273,13 @@ class SourceRefreshResult(BaseModel):
     message: str
 ```
 
-- [ ] **Step 4: Implement the Global Registry client**
+- [x] **Step 4: Implement the Global Registry client**
 
 Build requests beneath configured base URL `https://registry.sdmx.org/sdmx/v2/`, require agency and artefact ID, support `latest` or an explicit version, set SDMX-ML accept headers, use a short timeout, cap response bytes, parse with the existing safe parser, and mark normalized entries `live` and `authoritative`.
 
 Do not issue an unbounded `all/all/all` download.
 
-- [ ] **Step 5: Implement cache-preserving aggregation**
+- [x] **Step 5: Implement cache-preserving aggregation**
 
 ```python
 def merge_refresh(cache: list[LibraryEntry], refresh: SourceRefreshResult) -> list[LibraryEntry]:
@@ -290,7 +290,7 @@ def merge_refresh(cache: list[LibraryEntry], refresh: SourceRefreshResult) -> li
     return list(by_identity.values())
 ```
 
-- [ ] **Step 6: Verify GREEN**
+- [x] **Step 6: Verify GREEN**
 
 Run source tests and full suite with network disabled; tests must rely only on `MockTransport`.
 
@@ -403,7 +403,7 @@ Run recommendation, comparator, review, transformation, and full tests.
 - Modify: `tests/test_semantic_matcher.py`
 - Modify: `tests/test_recommendations.py`
 
-- [ ] **Step 1: Write failing structured-agent tests**
+- [x] **Step 1: Write failing structured-agent tests**
 
 Define tests for a valid result, invented local ID, invented reference ID, invented citation, invented code, absent methodology principle, malformed JSON, provider failure, and no LLM.
 
@@ -414,11 +414,11 @@ assert result.recommendation_text == "Insufficient information for a reliable re
 assert result.grounding_status in {"insufficient", "rejected"}
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run semantic and recommendation tests.
 
-- [ ] **Step 3: Add provider-neutral request and response models**
+- [x] **Step 3: Add provider-neutral request and response models**
 
 ```python
 class StandardsRecommendationRequest(BaseModel):
@@ -444,15 +444,15 @@ class StandardsRecommendationResult(BaseModel):
     model: str
 ```
 
-- [ ] **Step 4: Extend the provider protocol**
+- [x] **Step 4: Extend the provider protocol**
 
 Add `recommend(request)` to `SemanticMatcher`. OpenAI uses JSON response mode; Ollama uses a Pydantic-derived JSON schema with ID/citation enums. `NoLLMProvider.recommend` raises its existing safe `ProviderError`.
 
-- [ ] **Step 5: Implement strict post-response grounding validation**
+- [x] **Step 5: Implement strict post-response grounding validation**
 
 Validate all IDs, codes, principle IDs, and citation IDs against request allow-lists after provider parsing. Reject rather than repair invalid output. Convert every failure to the exact abstention result and do not overwrite deterministic evidence.
 
-- [ ] **Step 6: Verify GREEN**
+- [x] **Step 6: Verify GREEN**
 
 Run semantic/recommendation tests and full suite.
 

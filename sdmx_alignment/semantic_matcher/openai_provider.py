@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import json
 
+from sdmx_alignment.models.recommendations import (
+    StandardsRecommendationRequest,
+    StandardsRecommendationResult,
+)
 from sdmx_alignment.models.semantic import ProviderReadiness, SemanticMatchRequest, SemanticMatchResult
 from sdmx_alignment.semantic_matcher.base import BaseProvider, ProviderError
 from sdmx_alignment.semantic_matcher.prompt import SYSTEM_PROMPT, user_prompt
@@ -44,6 +48,38 @@ class OpenAIProvider(BaseProvider):
             return SemanticMatchResult.model_validate(payload)
         except Exception as exc:
             raise ProviderError("OpenAI semantic matching failed") from exc
+
+    def recommend(
+        self, request: StandardsRecommendationRequest
+    ) -> StandardsRecommendationResult:
+        if not self.is_ready().ready:
+            raise ProviderError(self.is_ready().message)
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                temperature=0,
+                response_format={"type": "json_object"},
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Recommend SDMX standards alignment using only the supplied JSON. "
+                            "Return one JSON object matching the requested result fields. "
+                            "Use only supplied local, reference, code, principle, and citation IDs. "
+                            "Do not invent evidence or identifiers; abstain when evidence is insufficient."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": json.dumps(request.model_dump(mode="json"), ensure_ascii=True),
+                    },
+                ],
+            )
+            payload = json.loads(response.choices[0].message.content)
+            payload.update(provider="openai", model=self.model)
+            return StandardsRecommendationResult.model_validate(payload)
+        except Exception as exc:
+            raise ProviderError("OpenAI standards recommendation failed") from exc
 
     def complete(self, question: str, context: dict) -> str:
         if not self.is_ready().ready:

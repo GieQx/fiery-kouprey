@@ -20,6 +20,12 @@ DOMAIN_TERMS = {
     },
 }
 
+DISCOVERY_TIER_PRIORITY = {"strong": 2, "plausible": 1, "weak": 0}
+TRUST_PRIORITY = {"authoritative": 1, "curated": 0}
+RETRIEVAL_MODE_PRIORITY = {"live": 2, "cache": 1, "curated": 0}
+SOURCE_PRIORITY = {"sdmx_global_registry": 1}
+NON_MEANINGFUL_EVIDENCE_SIGNALS = {"structural_similarity"}
+
 
 class DiscoveryResult(BaseModel):
     candidates: list[DiscoveryCandidate] = Field(default_factory=list)
@@ -133,17 +139,25 @@ def _candidate(local: DSDStructure, entry: LibraryEntry) -> DiscoveryCandidate |
     )
 
 
+def _candidate_sort_key(candidate: DiscoveryCandidate) -> tuple[int, int, int, int, int, str]:
+    meaningful_evidence_count = sum(
+        evidence.count
+        for evidence in candidate.evidence
+        if evidence.signal not in NON_MEANINGFUL_EVIDENCE_SIGNALS
+    )
+    return (
+        DISCOVERY_TIER_PRIORITY[candidate.discovery_tier],
+        meaningful_evidence_count,
+        TRUST_PRIORITY[candidate.reference.trust_level],
+        RETRIEVAL_MODE_PRIORITY[candidate.reference.retrieval_mode],
+        SOURCE_PRIORITY.get(candidate.reference.source_id.casefold(), 0),
+        candidate.reference.identity,
+    )
+
+
 def discover_candidates(local: DSDStructure, library: list[LibraryEntry]) -> DiscoveryResult:
     candidates = [candidate for entry in library if (candidate := _candidate(local, entry)) is not None]
-    tier_order = {"strong": 2, "plausible": 1, "weak": 0}
-    candidates.sort(
-        key=lambda item: (
-            tier_order[item.discovery_tier],
-            sum(evidence.count for evidence in item.evidence if evidence.signal != "structural_similarity"),
-            item.reference.identity,
-        ),
-        reverse=True,
-    )
+    candidates.sort(key=_candidate_sort_key, reverse=True)
     return DiscoveryResult(
         candidates=candidates[:5],
         message="Candidate standards found." if candidates else "No suitable reference standard identified.",
